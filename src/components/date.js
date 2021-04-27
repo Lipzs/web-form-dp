@@ -18,19 +18,17 @@ const DateAndTimePickers = ({onChange, data}) => {
   const classes = useStyles();
 
   return (
-    <form className={classes.container} noValidate>
-      <TextField
-        id="datetime-local"
-        label="Data de agendamento"
-        type="datetime-local"
-        onChange={(e) => { onChange(e) }}
-        defaultValue={ data }
-        className={classes.textField}
-        InputLabelProps={{
-          shrink: true,
-        }}
-      />
-    </form>
+    <TextField
+      id="datetime-local"
+      label="Data de agendamento"
+      type="datetime-local"
+      onChange={(e) => { onChange(e) }}
+      defaultValue={ data }
+      className={classes.textField}
+      InputLabelProps={{
+        shrink: true,
+      }}
+    />
   );
 }
 

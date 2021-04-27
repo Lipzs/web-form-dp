@@ -1,190 +1,200 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import api from '../../services/api';
+
+import { Grid, } from '@material-ui/core';
 
 import DateField from '../../components/date';
 import Switch from '@material-ui/core/Switch';
-import SuccessModal from '../../components/successModal';
+import Modal from '../../components/modal';
+import Input from '../../components/input';
 
 import './styles.css';
 
-export default class form extends Component {
+const Form = () => {
 
-  constructor(props) {
-    super(props);
-    this.today = new Date();
+  const [name, setName] = useState('');
+  const [cellphone, setCellphone] = useState('');
+  const [whatsapp, setWhatsapp] = useState(false);
+  const [brand, setBrand] = useState('');
+  const [model, setModel] = useState('');
+  const [year, setYear] = useState('');
+  const [licensePlate, setLicensePlate] = useState('');
+  const [date, setDate] = useState(new Date());
+  const [open, setOpen] = useState(false);
+  const [modalInfo, setModalInfo] = useState({ title: '', description: '', success: false });
 
-    this.baseState = {
-      name: '',
-      cellphone: '',
-      whatsapp: false,
-      brand: '',
-      model: '',
-      year: '',
-      licensePlate: '',
-      date: new Date(),
-      context: {},
-      open: false,
-      success: {
-        title: '',
-        description: ''
-      }
-    }
-    this.state = this.baseState;
+  const [nameError, setNameError] = useState('');
+  const [cellphoneError, setCellphoneError] = useState('');
+  const [brandError, setBrandError] = useState('');
+  const [modelError, setModelError] = useState('');
+  const [licensePlateError, setLicensePlateError] = useState('');
 
-    this.onChangeName = this.onChangeName.bind(this);
-    this.onChangeCellphone = this.onChangeCellphone.bind(this);
-    this.onChangeWhatsapp = this.onChangeWhatsapp.bind(this);
-    this.onChangeBrand = this.onChangeBrand.bind(this);
-    this.onChangeModel = this.onChangeModel.bind(this);
-    this.onChangeYear = this.onChangeYear.bind(this);
-    this.onChangeLicensePlate = this.onChangeLicensePlate.bind(this);
-    this.onChangeDate = this.onChangeDate.bind(this);
-    this.onSubmit = this.onSubmit.bind(this);
-    this.onReset = this.onReset.bind(this);
-    this.handleClose = this.handleClose.bind(this);
+  const clearFields = () => {
+    setName('');
+    setCellphone('');
+    setWhatsapp(false);
+    setBrand('');
+    setModel('');
+    setYear('');
+    setLicensePlate('');
   }
 
-  onChangeName(e) {
-    this.setState({ name: e.target.value })
-  }
-
-  onChangeCellphone(e) {
-    this.setState({ cellphone: e.target.value })
-  }
-
-  onChangeWhatsapp(e) {
-    this.setState({ whatsapp: e.target.checked })
-  }
-  onChangeBrand(e) {
-    this.setState({ brand: e.target.value })
-  }
-
-  onChangeModel(e) {
-    this.setState({ model: e.target.value })
-  }
-
-  onChangeYear(e) {
-    this.setState({ year: e.target.value })
-  }
-  onChangeLicensePlate(e) {
-    this.setState({ licensePlate: e.target.value })
-  }
-
-  onChangeDate(e) {
-    this.setState({ date: e.target.value })
-  }
-
-  onReset(e) {
-    this.setState(this.baseState);
-  }
-
-  handleClose() {
-    this.setState({ open: false });
-  }
-
-  async onSubmit(e) {
+  const handleSubmit = async(e) => {
     e.preventDefault();
 
-    const scheduleObj = {
-      name: this.state.name,
-      cellphone: this.state.cellphone,
-      whatsapp: this.state.whatsapp,
-      brand: this.state.brand,
-      model: this.state.model,
-      licensePlate: this.state.licensePlate,
-      date: this.state.date,
-      year: this.state.year,
-      context: this.state.context
-    };
+    if (name === undefined || name === '') {
+      setNameError('Campo requerido');
+      return;
+    }
+
+    if (cellphone !== '' && cellphone.length < 11) {
+      setCellphoneError('O telefone precisa ter 11 dígitos');
+      return;
+    }
+
+    if (brand === undefined || brand === '') {
+      setBrandError('Campo requerido');
+      return;
+    }
+
+    if (model === undefined || model === '') {
+      setModelError('Campo requerido');
+      return;
+    }
+
+    if (licensePlate === undefined || licensePlate === '') {
+      setLicensePlateError('Campo requerido');
+      return;
+    }
 
     try {
-      const response = await api.post('schedule', scheduleObj);
+      const response = await api.post('schedule', {
+        name,
+        cellphone,
+        whatsapp,
+        brand,
+        model,
+        year,
+        licensePlate,
+        date
+      });
       const receivedData = response.data;
-      const dateOfSchedule = (receivedData.data.date).split('T')[0];
-
-      this.setState({ context: receivedData });
-
+      const dateOfSchedule = (receivedData.formatedDate);
+  
       if (response.status === 200) {
-        this.setState({
-          success: {
-            title: 'Agendamento efetuado com successo',
-            description: `Seu agendamento foi efetuado para a data ${dateOfSchedule}`
-          }
-        })
-      }
+        setModalInfo({
+          title: 'Agendamento efetuado com successo',
+          description: `Olá ${receivedData.data.name} seu agendamento foi
+            efetuado  com sucesso para a data ${dateOfSchedule}`,
+          success: true
+        });
 
-      this.setState({ open: true });
+        setOpen(true);
+      }
+  
+      clearFields()
     } catch (err) {
-      this.setState({
-        success: {
-          title: 'Ops... Encontramos alguns problemas :(',
-          description: err.response.data.errors
-        }
+      setModalInfo({
+        title: 'Ops... Encontramos alguns problemas :(',
+        description: err.response.data.errors,
+        success: false
       })
 
-      this.setState({ open: true });
-    }
+      setOpen(true);
+    }      
   }
 
-  render() {
-    return (
-      <>
-        <form onSubmit={this.onSubmit}>
-          <fieldset>
-            <legend>Novo agendamento</legend>
-            <div className="form">
-              <section className="field-1">
-                <input type="text" value={this.state.name}
-                  onChange={this.onChangeName} placeholder="Nome Completo*" required />
-                <input type="text" value={this.state.cellphone}
-                  onChange={this.onChangeCellphone} placeholder="Celular (99) 99999-9999"
+  return (
+    <div className="container">
+      <h1>Faça seu agendamento</h1>
+      <div className="form-container">
+        <form onSubmit={(e) => handleSubmit(e)}>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <Input
+                name="name"
+                label="Nome"
+                onChange={(e) => {setName(e.target.value); setNameError('')}}
+                error={nameError}
+                value={name}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <Input
+                name="cellphone"
+                label="Celular"
+                onChange={(e) => {setCellphone(e.target.value); setCellphoneError('')}}
+                error={cellphoneError}
+                value={cellphone}
+              />
+            </Grid>
+            <Grid item xs={6}>  
+              <Input
+                name="brand"
+                label="Marca"
+                onChange={(e) => {setBrand(e.target.value); setBrandError('')}}
+                error={brandError}
+                value={brand}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <section>
+                <p>Possui WhatsApp? </p>
+                <Switch
+                  disabled={cellphone === ''}
+                  onChange={(e) => setWhatsapp(e.target.checked)}
+                  name="whatsApp"
+                  inputProps={{ 'aria-label': 'whatsapp checkbox' }}
                 />
               </section>
-              <section className="field-2">
-                {this.state.cellphone !== '' && (
-                  <section>
-                    <p>Possui WhatsApp?: </p>
-                    <Switch
-                      checked={this.state.whatsapp}
-                      onChange={this.onChangeWhatsapp}
-                      name="whatsApp"
-                      inputProps={{ 'aria-label': 'whatsapp checkbox' }}
-                    />
-                  </section>
-                )}
-              </section>
-              <section className="field-3">
-                <input type="text" value={this.state.brand}
-                  onChange={this.onChangeBrand} placeholder="Marca*" required />
-                <input type="text" value={this.state.model}
-                  onChange={this.onChangeModel} placeholder="Modelo*" required />
-              </section>
-              <section className="field-4">
-                <input type="text" value={this.state.year}
-                  onChange={this.onChangeYear} placeholder="Ano" />
-                <input type="text" value={this.state.licensePlate}
-                  onChange={this.onChangeLicensePlate} placeholder="Placa *" required />
-              </section>
-              <DateField value={this.state.date} min={this.today} onChange={(e) => { this.onChangeDate(e) }} />
-              <br />
-              <br />
-              <section className="buttons">
-                <button type="submit">Enviar</button>
-                <button type="button" value="Limpar"
-                  onClick={this.onReset}>Limpar</button>
-              </section>
-                * Campos obrigatórios
-              </div>
-          </fieldset>
+            </Grid> 
+            <Grid item xs={6}>
+              <Input
+                name="model"
+                label="Modelo"
+                onChange={(e) => {setModel(e.target.value); setModelError('')}}
+                error={modelError}
+                value={model}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <Input
+                name="year"
+                label="Ano"
+                onChange={(e) => setYear(e.target.value)}
+                value={year}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <Input
+                name="licensePlate"
+                label="Placa"
+                onChange={(e) => {setLicensePlate(e.target.value); setLicensePlateError('')}}
+                error={licensePlateError}
+                value={licensePlate}
+              />
+            </Grid>
+            <Grid item xs={5}>
+              <DateField onChange={(e) => setDate(e.target.value)} />
+            </Grid>
+            <Grid item xs={6}>
+              <button type="submit">Enviar</button> 
+            </Grid>
+            <Grid item xs={6}>
+              <button type="button" value="Limpar" onClick={clearFields}>Limpar</button>
+            </Grid>
+          </Grid>
         </form>
-
-        <SuccessModal
-          open={this.state.open}
-          handleClose={() => { this.handleClose() }}
-          description={this.state.success.description}
-          title={this.state.success.title}
-        />
-      </>
-    );
-  }
+      </div>
+      
+      <Modal
+        open={open}
+        handleClose={() => setOpen(false)}
+        description={modalInfo.description}
+        title={modalInfo.title}
+      />
+    </div>
+  )
 }
+
+export default Form;
